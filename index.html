@@ -60,6 +60,7 @@
             100% { transform: translateY(0px); }
         }
     </style>
+    <script src="https://www.google.com/recaptcha/api.js?render=ВАШ_SITE_KEY"></script>
 </head>
 <body>
     <!-- Шапка с анимацией -->
@@ -356,7 +357,7 @@
                     <input type="checkbox" id="agree" name="agree" value="true" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" required>
                     <label for="agree" class="ml-2 text-sm text-gray-700">Я согласен на обработку персональных данных</label>
                 </div>
-                
+                <input type="hidden" id="recaptcha-token" name="recaptcha-token">
                 <button type="submit" class="w-full bg-yellow-400 hover:bg-yellow-500 text-blue-800 font-bold py-3 px-6 rounded-lg text-lg shadow-lg transition duration-300 flex items-center justify-center">
                     Отправить заявку
                     <img src="https://img.icons8.com/color/48/000000/send-letter.png" class="w-6 h-6 ml-2" alt="Отправить">
@@ -618,31 +619,38 @@
             event.preventDefault();
             
             const form = event.target;
-            const data = {
-                name: form.querySelector('#name').value,
-                phone: form.querySelector('#phone').value,
-                'child-name': form.querySelector('#child-name').value,
-                age: form.querySelector('#age').value,
-                goal: form.querySelector('#goal').value,
-                agree: form.querySelector('#agree').checked
-            };
-            
-            console.log('Отправляемые данные:', data); // Отладка
-            
-            fetch('https://script.google.com/macros/s/AKfycbyOZXBhw2RVD2TQrJ2AvkaNxUcm5rUeWS8W89EO3RMsoHxH493nRUFrCEaWrl65c8UJ/exec', {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            }).then(() => {
-                // Показываем модальное окно
-                document.getElementById('modal').classList.remove('hidden');
-                form.reset();
-            }).catch(error => {
-                console.error('Ошибка:', error);
-                alert('Ошибка при отправке: ' + error.message);
+            grecaptcha.ready(function() {
+                grecaptcha.execute('6Le3yDErAAAAANL2NDQXdqFFLLPa7QFPpT1ZeXNQ', {action: 'submit'}).then(function(token) {
+                    // Добавляем токен в форму
+                    form.querySelector('#recaptcha-token').value = token;
+                    
+                    const data = {
+                        name: form.querySelector('#name').value,
+                        phone: form.querySelector('#phone').value,
+                        'child-name': form.querySelector('#child-name').value,
+                        age: form.querySelector('#age').value,
+                        goal: form.querySelector('#goal').value,
+                        agree: form.querySelector('#agree').checked,
+                        'recaptcha-token': token
+                    };
+                    
+                    console.log('Отправляемые данные:', data); // Отладка
+                    
+                    fetch('https://script.google.com/macros/s/AKfycbzWcxWXjBPFQJOBq73oK1chTMS5c-f_1bhXF7R4Gi7oahV7tyuaiSpk8U9jOzoitHjb/exec', {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    }).then(() => {
+                        document.getElementById('modal').classList.remove('hidden');
+                        form.reset();
+                    }).catch(error => {
+                        console.error('Ошибка:', error);
+                        alert('Ошибка при отправке: ' + error.message);
+                    });
+                });
             });
         });
         
